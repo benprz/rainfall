@@ -1,0 +1,15 @@
+1. We listed the available files in the home directory
+-> level0
+
+2. We used Cutter to decompile the executable
+-> We saw a condition that asked for argv[1] == 0x1a7 (423 in decimal) and that it was supposed to be atoi before
+
+3. We also saw that there was an execve("/bin/sh") done if the above condition was met and then executed it
+-> ./level0 423
+
+4. We had an output that wouldn't allow us to do anything in the current directory, but we noticed that it was in the level0 directory and not the level1
+
+5. So we used the fullpath to cat the .pass from the level1 home directory
+-> cat /home/user/level1/.pass
+
+su level1
