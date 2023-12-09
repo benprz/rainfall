@@ -1,0 +1,33 @@
+1. We listed the available files in the home directory
+-> level1
+
+2. We used Cutter to decompile the executable
+-> we saw a function run() which calls /bin/sh but run is never called
+
+3. in the main we have gets function and open the man we find
+->
+SECURITY CONSIDERATIONS
+     The gets() function cannot be used securely.  Because of its lack of bounds checking, and the inability for the calling
+     program to reliably determine the length of the next incoming line, the use of this function enables malicious users to
+     arbitrarily change a running program's functionality through a buffer overflow attack.  It is strongly suggested that the
+     fgets() function be used in all cases.  (See the FSA.)
+
+4. we try buffer overflow attack in main we saw
+-> 0x08048486      sub     esp, 0x50 (its 80 bytes)
+
+5. we make a python script for the buffer overflow attack like put 76 "A" and then 4 bytes of the address of the run function (0x08048444)
+-> script in resources folder
+
+6. we run the script and redirect the output to a file
+-> python /tmp/script.py > /tmp/payload
+
+7. we run the executable and buffer overflow gets
+-> cat /tmp/payload - | ./level1
+
+(we need the - on cat command because cat - listen level1 if we don't do that the executable fail -> segfault)
+
+
+8. we got the shell and we cat the flag
+->
+whoami -> level2
+cat /home/user/level2/.pass -> (flag)

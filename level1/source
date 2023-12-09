@@ -1,0 +1,18 @@
+int32_t run (void) {
+    size_t size;
+    size_t nitems;
+    FILE * stream;
+    eax = *(stdout);
+    edx = *(stdout);
+    eax = "Good... Wait what?\n";
+    fwrite (eax, edx, 0x13, 1);
+    system ("/bin/sh");
+    return eax;
+}
+
+int32_t main (void) {
+    char * s;
+    eax = &s;
+    gets (eax);
+    return eax;
+}
