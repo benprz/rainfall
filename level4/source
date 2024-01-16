@@ -1,0 +1,26 @@
+//----- (08048444) --------------------------------------------------------
+int __cdecl p(char *format)
+{
+  return printf(format);
+}
+
+//----- (08048457) --------------------------------------------------------
+int n()
+{
+  int result; // eax
+  char s[520]; // [esp+10h] [ebp-208h] BYREF
+
+  fgets(s, 512, stdin);
+  p(s);
+  result = m;
+  if ( m == 16930116 )
+    return system("/bin/cat /home/user/level5/.pass");
+  return result;
+}
+// 8049810: using guessed type int m;
+
+//----- (080484A7) --------------------------------------------------------
+int __cdecl main(int argc, const char **argv, const char **envp)
+{
+  return n();
+}
