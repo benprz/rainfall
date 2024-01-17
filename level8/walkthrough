@@ -54,5 +54,5 @@ so at this point auth[32] is *service and not null
 
 we win
 
-in the shel like always
+in the shell like always
 cat /home/user/level9/.pass
