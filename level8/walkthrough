@@ -50,7 +50,7 @@ and it works we understand after
 
 the result is
 0x804a008, 0x804a028
-so at this point auth[32] is *service and not null
+so at this point auth[32] is *service
 
 we win
 
