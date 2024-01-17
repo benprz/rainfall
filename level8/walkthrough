@@ -51,8 +51,10 @@ and it works we understand after
 the result is
 0x804a008, 0x804a028
 so at this point auth[32] is *service
+service = overflow of fgets on s "service\n"
+*v6 = s[8] (\n)
 
-we win
+we win auth[32] is \n and not null
 
 in the shell like always
 cat /home/user/level9/.pass
