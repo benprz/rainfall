@@ -38,7 +38,7 @@ test_number_overflow.c:5:25: warning: overflow in expression; result is 44 with 
                                ^
 1 warning generated.
 `
--> we then get a warning that confirms the value as correct.
+-> we then get a warning that confirms the value as correct
 
 The exploit is then obvious :
 -> ./bonus1 -1073741813 0123456789012345678901234567890123456789FLOW
